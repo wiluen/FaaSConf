@@ -1,0 +1,15 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://33.33.33.132:31112
+functions:
+  wf5:
+    lang: python3-debian
+    handler: ./sequential
+    image: registry.cn-hangzhou.aliyuncs.com/sysu-faas/ml_functions:image_wf5
+    environment:
+      combine_output: false
+      read_timeout: "500s"
+      write_timeout: "500s"
+      exec_timeout: "500s"
+
