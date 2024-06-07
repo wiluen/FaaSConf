@@ -1,0 +1,22 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://33.33.33.132:31112
+functions:
+  load:
+    lang: python3
+    handler: ./load
+    image: registry.cn-hangzhou.aliyuncs.com/sysu-faas/ml_functions:load_v2
+    limits:
+      cpu: 50m
+      memory: 64M
+    requests:
+      cpu: 50m
+      memory: 64M
+    environment:
+      combine_output: false
+      read_timeout: 120 # seconds
+      write_timeout: 120 # seconds
+      exec_timeout: 120 # disable
+      # max_inflight: 100
+

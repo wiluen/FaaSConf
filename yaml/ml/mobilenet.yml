@@ -1,0 +1,22 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://33.33.33.132:31112
+functions:
+  mobilenet:
+    lang: python3-debian
+    handler: ./mobilenet
+    image: registry.cn-hangzhou.aliyuncs.com/sysu-faas/ml_functions:mobilenet
+    limits:
+      cpu: 50m
+      memory: 64M
+    requests:
+      cpu: 50m
+      memory: 64M
+    environment:
+      combine_output: false
+      read_timeout: 120
+      write_timeout: 120
+      exec_timeout: 120
+      # max_inflight: 100
+
