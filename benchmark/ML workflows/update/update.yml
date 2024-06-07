@@ -1,0 +1,24 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://33.33.33.132:31112
+functions:
+  update:
+    lang: python3
+    handler: ./update
+    build_options:
+      - pillow
+    image: registry.cn-hangzhou.aliyuncs.com/sysu-faas/ml_functions:update_v2
+    limits:
+      cpu: 2000m
+      memory: 2048M
+    requests:
+      cpu: 2000m
+      memory: 2048M
+    environment:
+      combine_output: false
+      read_timeout: 120 # seconds
+      write_timeout: 120 # seconds
+      exec_timeout: 120 # disable
+      # max_inflight: 
+
