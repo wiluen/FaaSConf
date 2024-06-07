@@ -1,0 +1,5 @@
+onnxruntime
+numpy
+Pillow
+onnx
+line-profiler
