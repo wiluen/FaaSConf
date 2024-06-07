@@ -1,0 +1,14 @@
+locust==2.15.1
+bayesian-optimization==1.4.3
+botorch==0.8.5
+numpy==1.24.3
+pandas==2.0.2
+PyYAML==3.12
+requests==2.31.0
+torch==2.0.1
+torchaudio==2.0.2
+torchvision==0.15.2
+tqdm==4.66.1
+scikit-learn==1.2.2
+scipy==1.10.1
+gpytorch==1.10
