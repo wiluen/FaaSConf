@@ -12,9 +12,8 @@ import json
 import logging
 # from tqdm import tqdm
 from RLenv import Environment
-# self writing files
 import networks
-# from grid_simulator import grid_model
+
 NUM_RESOURCES=3
 # CPU_MIN=250
 # CPU_MAX=2000
@@ -28,8 +27,8 @@ REP_MIN=1
 REP_MAX=8
 CONCURR_MIN=1
 CONCURR_MAX=10
-CPU_UNIT_COST=0.000173   #0.173/1000
-MEM_UNIT_COST=0.000012    #0.0123/1024
+CPU_UNIT_COST=0.000173  
+MEM_UNIT_COST=0.000012   
 N=2 # nsigma in ses
 dir_path = os.path.dirname(os.path.realpath(__file__))
 handler = logging.FileHandler(os.path.join(dir_path, "log/gatmf_sequence.log"))
@@ -141,8 +140,7 @@ class MARL(object):
         self.critic_attention_optimizer=torch.optim.Adam(self.critic_attention.parameters(),lr=0.0001)
 
         self.buffer_capacity=300
-        # self.buffer_pointer=n
-        # # self.buffer_size=0
+        
         
         self.a_dim=3
         self.s_dim=10
@@ -203,7 +201,7 @@ class MARL(object):
         standardscaler = StandardScaler()
         scaler=standardscaler.fit(self.all_s)    # scaler-> mean,var
         x = scaler.transform(x)
-        return x           #  这是全矩阵，没有做reshape操作
+        return x          
 
     def update(self):
         actor_loss_sum=0
@@ -219,36 +217,34 @@ class MARL(object):
             r_batch=torch.FloatTensor(self.buffer_r[batch_index]).to(self.device)
             # end_batch=torch.FloatTensor(self.buffer_end[batch_index]).to(self.device)
             
-        #  注意力的方法是：计算注意力分数 + 注意力动作（状态） + 拼接      都是根据state来进行注意力打分，且只进行一次，actor，critic分别算一次
+      
             with torch.no_grad():
-                # 通过s'计算a’来计算Q目标
-                update_Actor_attention1=self.actor_attention_target(s1_batch,self.Gmat)   #计算出actor注意力分数
-                # Gmat是邻接矩阵，对角线是0，GCN中邻接矩阵对角线是1，效果是信息传递，这里是0表示了邻居的状态和动作
-                update_Actor_state1_bar=torch.bmm(update_Actor_attention1,s1_batch)   #注意力分数*状态=actor注意力状态
-                # actor认为的注意力state
-                update_Actor_state1_all=torch.concat([s1_batch,update_Actor_state1_bar],dim=-1)   #拼接原来状态和actor注意力状态
-                update_action1=self.actor_target(update_Actor_state1_all)   #输出actor注意力动作
-                # 这是DDPG中的 a'=a_t(s')
-                # ===========================分割线================================
-                update_Critic_attention1=self.critic_attention_target(s1_batch,self.Gmat)  #计算critic注意力分数
-                update_Critic_state1_bar=torch.bmm(update_Critic_attention1,s1_batch)   #注意力分数*状态=critic注意力状态
-                # critic认为的注意力state
-                update_Critic_state1_all=torch.concat([s1_batch,update_Critic_state1_bar],dim=-1)   #拼接原状态和critic注意力状态★★★★★
-                update_action1_bar=torch.bmm(update_Critic_attention1,update_action1)   #critic注意力分数*actor注意力动作=被critic修改的actor注意力动作
-                # critic认为的注意力action
-                update_action1_all=torch.concat([update_action1,update_action1_bar],dim=-1)  #拼接actor注意力动作和critic修改的actor注意力动作★★★★★
+                # use s',a’->Q target
+                update_Actor_attention1=self.actor_attention_target(s1_batch,self.Gmat) 
+                update_Actor_state1_bar=torch.bmm(update_Actor_attention1,s1_batch)   #att score*s=actor's               
+                update_Actor_state1_all=torch.concat([s1_batch,update_Actor_state1_bar],dim=-1)  
+                update_action1=self.actor_target(update_Actor_state1_all)   
+                # DDPG a'=a_t(s')
+                # ===========================================================
+                update_Critic_attention1=self.critic_attention_target(s1_batch,self.Gmat) 
+                update_Critic_state1_bar=torch.bmm(update_Critic_attention1,s1_batch)  
+                # critic'state
+                update_Critic_state1_all=torch.concat([s1_batch,update_Critic_state1_bar],dim=-1)   
+                update_action1_bar=torch.bmm(update_Critic_attention1,update_action1) 
+                # critic'action
+                update_action1_all=torch.concat([update_action1,update_action1_bar],dim=-1)  
                 Q1=self.critic_target(update_Critic_state1_all,update_action1_all)  #Q(S,A)=Q(sj,sj~,aj,aj~)
-                # 这是DDPG中的 q'=c_t(s',a')
+                # DDPG q'=c_t(s',a')
                 y=r_batch+self.gamma*Q1
 
-            # 通过a和s来计算Q
+            # a and s->Q
             update_Critic_attention=self.critic_attention(s_batch,self.Gmat)
             update_Critic_state_bar=torch.bmm(update_Critic_attention,s_batch)
             update_Critic_state_all=torch.concat([s_batch,update_Critic_state_bar],dim=-1)
             update_action_bar=torch.bmm(update_Critic_attention,a_batch)
             update_action_all=torch.concat([a_batch,update_action_bar],dim=-1)
             Q=self.critic(update_Critic_state_all,update_action_all)
-            # 这是DDPG中的 q=c(s,a)   这里的s和a都要来算    
+            # DDPG q=c(s,a)    
             critic_loss=torch.sum(torch.square(y-Q))/self.batch_size
             critic_loss_sum+=critic_loss.cpu().item()
 
@@ -260,12 +256,11 @@ class MARL(object):
                 torch.nn.utils.clip_grad_norm_(self.critic_attention.parameters(), self.max_grad_norm)
             self.critic_optimizer.step()
             self.critic_attention_optimizer.step()
-            # critic和critic attention网络都是一样的参数更新
-            # ----------------critic、critic attention更新完毕--------------------------
+           
             
-            update_Actor_attention=self.actor_attention(s_batch,self.Gmat)   #state在actor下的注意力分数★★★★★  s应该是全局状态，s*adj*att 就是带权重消息传递，将邻居的特征赋予自己
-            update_Actor_state_bar=torch.bmm(update_Actor_attention,s_batch)  #actor注意力分数*状态=actor注意力状态
-            update_Actor_state_all=torch.concat([s_batch,update_Actor_state_bar],dim=-1)   #拼接注意力状态和原来状态
+            update_Actor_attention=self.actor_attention(s_batch,self.Gmat)  
+            update_Actor_state_bar=torch.bmm(update_Actor_attention,s_batch) 
+            update_Actor_state_all=torch.concat([s_batch,update_Actor_state_bar],dim=-1)  
             update_action=self.actor(update_Actor_state_all)
             # print(update_action)
             #DDPG中的a=a(s)
@@ -275,7 +270,7 @@ class MARL(object):
                 update_Critic_state_bar_new=torch.bmm(update_Critic_attention_new,s_batch)
                 update_Critic_state_all_new=torch.concat([s_batch,update_Critic_state_bar_new],dim=-1)
 
-            update_action_bar_new=torch.bmm(update_Critic_attention_new,update_action)   #critic注意力分数*actor注意力动作
+            update_action_bar_new=torch.bmm(update_Critic_attention_new,update_action)  
             update_action_all_new=torch.concat([update_action,update_action_bar_new],dim=-1)
 
             actor_loss=-torch.sum(self.critic(update_Critic_state_all_new,update_action_all_new))/self.batch_size
@@ -290,9 +285,7 @@ class MARL(object):
                 torch.nn.utils.clip_grad_norm_(self.actor_attention.parameters(), self.max_grad_norm)
             self.actor_optimizer.step()
             self.actor_attention_optimizer.step()
-            # ----------------actor、actor attention更新完毕-------------------------------
-
-            # target网络软更新
+          
              # adding batchnormal
             for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
                 target_param.data.copy_(self.soft_replace_rate * param.data + (1 - self.soft_replace_rate) * target_param.data)
@@ -314,13 +307,13 @@ class MARL(object):
         price_total=0
         x=self.form_x_to_resource_conf(action)
         flag=0
-        # 全都是分组的
+       
         for i in range(self.function_number):
             cpu_quota=x[i][0]
             mem_quota=x[i][1]
             replicas=x[i][2]
             # exec_time=lst[x][8]   #P75
-            price_cost=(cpu_quota*CPU_UNIT_COST+mem_quota*MEM_UNIT_COST)*replicas          # 范围是0.x
+            price_cost=(cpu_quota*CPU_UNIT_COST+mem_quota*MEM_UNIT_COST)*replicas         
             # local_reward=price_cost*exec_time
             price_total+=price_cost
         print("origin_price:",price_total)
@@ -329,10 +322,10 @@ class MARL(object):
             print("change action from history")
             flag=1
             random_num = random.randint(0, self.n-30)
-            new_action = self.lib[random_num] #一维
+            new_action = self.lib[random_num]
             new_action=np.clip(np.random.normal(new_action, 0.05), 0.1, 0.9)   # add noise for exploration
         else:
-            new_action=action #5维度 
+            new_action=action 
         return new_action,price_total,flag
 
     
@@ -364,14 +357,14 @@ class MARL(object):
                 print(f'the {step} iterations')        
                 with torch.no_grad():
                     state=torch.FloatTensor(current_state).to(self.device).unsqueeze(0)   
-                    #环境加噪声  10次 选argmax Q
+                    #add noise argmax Q
                     Actor_attention=self.actor_attention(state,self.Gmat)
                     Actor_state_bar=torch.bmm(Actor_attention,state)
                     Actor_state_all=torch.concat([state,Actor_state_bar],dim=-1)
                     self.actor.eval()
                     self.critic.eval()
                     t1=time.time()
-                    action=self.actor(Actor_state_all)     #做出动作
+                    action=self.actor(Actor_state_all)    
                     t2=time.time()
                     print(t2-t1)
                     print("origin_action:",action)
@@ -387,14 +380,14 @@ class MARL(object):
                     # action=np.clip(np.random.normal(action, 0.1), 0.1, 0.9) 
                    
                     # }
-                    print('action:',action)                      # 一维的，在env中会处理
-                    reward,next_state,avg,p95,throughput,price=self.simulator.step(action,users,benchmark,False) #apply进环境
+                    print('action:',action)                    
+                    reward,next_state,avg,p95,throughput,price=self.simulator.step(action,users,benchmark,False)
                     print_info = f'--The {step} iteration, change flag:{flag}, concurrrency: {benchmark}-{users}, action: {action}, price: {price}$, avg_e2e_latency: {avg} s,p95: {p95} throughput: {throughput},  reward:{reward}'
                     print(print_info)
                     logger.info(print_info)
 
                 next_state=self.scale_state(np.array([next_state])).reshape(self.function_number,self.s_dim)
-                self.buffer_s[self.buffer_pointer]=current_state    #reshape+scale过
+                self.buffer_s[self.buffer_pointer]=current_state  
                 self.buffer_s1[self.buffer_pointer]=next_state     
                 self.buffer_a[self.buffer_pointer]=action.reshape(self.function_number,self.a_dim)
                 self.buffer_r[self.buffer_pointer]=np.array(reward).reshape(self.function_number,1)
@@ -419,13 +412,13 @@ class MARL(object):
             print(f'the {step} iterations, the workload is {users},next_workload is {next_wk}')
             with torch.no_grad():
                 state=torch.FloatTensor(current_state).to(self.device).unsqueeze(0)   
-                #环境加噪声  10次 选argmax Q
+                
                 Actor_attention=self.actor_attention(state,self.Gmat)
                 Actor_state_bar=torch.bmm(Actor_attention,state)
                 Actor_state_all=torch.concat([state,Actor_state_bar],dim=-1)
                 self.actor.eval()
                 self.critic.eval()
-                action=self.actor(Actor_state_all)     #做出动作
+                action=self.actor(Actor_state_all)     
                 print("origin_action:",action)
                 
                 flag=0
@@ -440,14 +433,14 @@ class MARL(object):
                 # action=np.clip(action,0.1,0.9)
                 # }
                 print('action:',action)                     
-                reward,next_state,avg,p95,throughput,price=self.simulator.step_load(action,users,next_wk) #apply进环境,
+                reward,next_state,avg,p95,throughput,price=self.simulator.step_load(action,users,next_wk) 
                 print_info = f'--The {step} iteration, change flag:{flag}, concurrrency: parallel-{users},, action: {action}, price: {price}$, avg_e2e_latency: {avg} s, throughput: {throughput},  reward:{reward}'
                 print(print_info)
                 logger.info(print_info)
 
             next_state=self.scale_state(np.array([next_state])).reshape(self.function_number,self.s_dim)
             
-            self.buffer_s[self.buffer_pointer]=current_state    #reshape+scale过
+            self.buffer_s[self.buffer_pointer]=current_state  
             self.buffer_s1[self.buffer_pointer]=next_state     
             self.buffer_a[self.buffer_pointer]=action.reshape(self.function_number,self.a_dim)
             self.buffer_r[self.buffer_pointer]=np.array(reward).reshape(self.function_number,1)
