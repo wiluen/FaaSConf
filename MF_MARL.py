@@ -12,7 +12,6 @@ from tqdm import tqdm
 from RLenv import Environment
 # self writing files
 import networks
-# from grid_simulator import grid_model
 dir_path = os.path.dirname(os.path.realpath(__file__))
 handler = logging.FileHandler(os.path.join(dir_path, "log/mf.log"))
 handler.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
@@ -65,48 +64,14 @@ class MARL(object):
         self.diamond_extent=diamond_extent
         self.num_move=num_move
 
-        # simulator
-        # self.simulator=grid_model.Model()
-        # self.simulator.init_exogenous_variables(num_grid=self.num_grid,
-        #                                         num_diamond=self.num_diamond,
-        #                                         diamond_extent=self.diamond_extent,
-        #                                         num_move=self.num_move
-        #                                         )
+
+     
 
         # adjency matrix
-        # self.Gmat=self.simulator.Gmat
+         self.Gmat=self.Gmat
         # print(self.Gmat)
         # self.Gmat=torch.FloatTensor(self.Gmat).to(self.device)
-        # Gmat = [[0,1,0,0,1,1,0,1,0,1,0,0],
-        #         [1,0,0,1,0,0,1,0,1,0,1,1],
-        #         [0,0,0,0,0,0,0,0,0,0,0,1],
-        #         [0,1,0,0,1,0,0,0,0,0,0,1],
-        #         [1,0,0,1,0,0,0,0,0,0,0,0],
-        #         [1,0,0,0,0,0,0,0,0,0,0,0],
-        #         [0,1,0,0,0,0,0,1,0,0,0,1],
-        #         [1,0,0,0,0,0,1,0,0,0,0,0],
-        #         [0,1,0,0,0,0,0,0,0,0,0,0],
-        #         [1,0,0,0,0,0,0,0,0,0,0,0],
-        #         [0,1,0,0,0,0,0,0,0,0,0,1],
-        #         [0,1,1,1,0,0,1,0,0,0,1,0]]
-        # Gmat = [[0,1,0,0,0],
-        #         [1,0,1,0,0],
-        #         [0,1,0,1,0],
-        #         [0,0,1,0,1],
-        #         [0,0,0,1,0]]
-        # Gmat = [[0,1,0,0,0,0],
-        #         [1,0,1,0,0,0],
-        #         [0,1,0,1,0,0],
-        #         [0,0,1,0,1,1],
-        #         [0,0,0,1,0,0],
-        #         [0,0,0,1,0,0]]
-        Gmat = [[0,1,0,0,0,1,0],
-                [1,0,1,0,0,0,0],
-                [0,1,0,1,0,0,0],
-                [0,0,1,0,1,0,0],
-                [0,0,0,1,0,0,0],
-                [1,0,0,0,0,0,1],
-                [0,0,0,0,0,1,0]]
+        
         self.Gmat=torch.FloatTensor(Gmat).unsqueeze(0).to(self.device)
         # self.Gmat=Gmat.repeat(64,1,1).to(self.device)
         # learning parameters
@@ -145,18 +110,13 @@ class MARL(object):
         self.critic_attention_target=copy.deepcopy(self.critic_attention).eval()
         self.critic_attention_optimizer=torch.optim.Adam(self.critic_attention.parameters(),lr=0.0001)
 
-        # if self.lr_decay:
-        #     self.actor_optimizer_scheduler = torch.optim.lr_scheduler.LambdaLR(self.actor_optimizer, lr_lambda=lambda epoch: 0.99**epoch)
-        #     self.critic_optimizer_scheduler = torch.optim.lr_scheduler.LambdaLR(self.critic_optimizer, lr_lambda=lambda epoch: 0.99**epoch)
-        #     self.actor_attention_optimizer_scheduler = torch.optim.lr_scheduler.LambdaLR(self.actor_attention_optimizer, lr_lambda=lambda epoch: 0.99**epoch)
-        #     self.critic_attention_optimizer_scheduler = torch.optim.lr_scheduler.LambdaLR(self.critic_attention_optimizer, lr_lambda=lambda epoch: 0.99**epoch)
 
         # buffer
         # self.n=4082
         # self.n=2047
         wk='20'
         benchmark='branch'
-        self.n=1268  # all good 411                  # (1564,1244,1287,1301,1905)=7301    (1292,1257,1051,1554,1313)=6467   (1310 1151  1268  1261  1231)=6056
+        self.n=1268  # all good 411                  
         self.buffer_capacity=buffer_capacity
         self.buffer_pointer=0
         self.buffer_size=0
@@ -199,34 +159,31 @@ class MARL(object):
             r_batch=torch.FloatTensor(self.buffer_r[batch_index]).to(self.device)
             # end_batch=torch.FloatTensor(self.buffer_end[batch_index]).to(self.device)
             
-        #  注意力的方法是：计算注意力分数 + 注意力动作（状态） + 拼接      都是根据state来进行注意力打分，且只进行一次，actor，critic分别算一次
+       
             with torch.no_grad():
-                # Gmat左成一个状态/动作矩阵就得到了邻居传播的信息
-                s1_avg=torch.bmm(self.Gmat,s1_batch)   #邻接矩阵左乘特征矩阵得到的是：相邻节点的属性之和
-                row_sums = self.Gmat.sum(dim=2)     #有几个相邻节点
-                v_s1 = s1_avg / row_sums.unsqueeze(2)   # 相邻节点属性之和/相邻节点个数 = 相邻节点的平均特征 = 均场  
+               
+                s1_avg=torch.bmm(self.Gmat,s1_batch)   
+                row_sums = self.Gmat.sum(dim=2)    
+                v_s1 = s1_avg / row_sums.unsqueeze(2)   # neibor feature sum/neibor number = neibor's mean feature = mf 
                 
-                # 这个均场就是相邻的state的 比如[3, 2     [0 1 1      [4,2            [2 1
-                #                              3,1   *   1 0 0   =   2,2   /mean =   2 2    
-                #                              1,1 ]     1 0 0]      2,2]            2 2]
-                update_Actor_state1_all=torch.concat([s1_batch,v_s1],dim=-1)   #这里拼接出来的就是每个节点的自己特征+邻居的均场特征
-                update_action1=self.actor_target(update_Actor_state1_all)   #输出actor注意力动作
-                a1_avg=torch.bmm(self.Gmat,update_action1)   #critic注意力分数*actor注意力动作=被critic修改的actor注意力动作
+                update_Actor_state1_all=torch.concat([s1_batch,v_s1],dim=-1)   #self feature+neibor's mean feature
+                update_action1=self.actor_target(update_Actor_state1_all)   
+                a1_avg=torch.bmm(self.Gmat,update_action1)   
                 v_a1 = a1_avg / row_sums.unsqueeze(2)
-                update_action1_all=torch.concat([update_action1,v_a1],dim=-1)  #拼接actor注意力动作和critic修改的actor注意力动作★★★★★
+                update_action1_all=torch.concat([update_action1,v_a1],dim=-1)  
                 Q1=self.critic_target(update_Actor_state1_all,update_action1_all)  #Q(S,A)=Q(sj,sj~,aj,aj~)
                 y=r_batch+self.gamma*Q1
 
-                #理解这个批处理，比如s是64,5,10的，但神经网络还是(10->4)，所以其实是输入神经网络了64*5次，所以其实单次输入还是一个智能体的状态，并非一整张图
+               
 
-            s_avg=torch.bmm(self.Gmat,s_batch)   #注意力分数*状态=actor注意力状态  
+            s_avg=torch.bmm(self.Gmat,s_batch) 
             v_s = s_avg / row_sums.unsqueeze(2)
-            a_avg=torch.bmm(self.Gmat,a_batch)   #注意力分数*状态=actor注意力状态  
+            a_avg=torch.bmm(self.Gmat,a_batch)   #att score*s=actor' att s
             v_a = a_avg / row_sums.unsqueeze(2)
             update_Critic_state_all=torch.concat([s_batch,v_s],dim=-1)
             update_action_all=torch.concat([a_batch,v_a],dim=-1)
             Q=self.critic(update_Critic_state_all,update_action_all)
-            # 这是DDPG中的 q=c(s,a)   这里的s和a都要来算    
+           
             critic_loss=torch.sum(torch.square(y-Q))/self.batch_size
             critic_loss_sum+=critic_loss.cpu().item()
 
@@ -238,15 +195,15 @@ class MARL(object):
                 # torch.nn.utils.clip_grad_norm_(self.critic_attention.parameters(), self.max_grad_norm)
             self.critic_optimizer.step()
            
-            # ----------------critic、critic attention更新完毕--------------------------
+            # ----------------critic、critic attention update done--------------------------
             
             update_action=self.actor(update_Critic_state_all)
-            a_new_avg=torch.bmm(self.Gmat,update_action)   #critic注意力分数*actor注意力动作
+            a_new_avg=torch.bmm(self.Gmat,update_action)   
             v_a_new = a_new_avg / row_sums.unsqueeze(2)
             update_action_all_new=torch.concat([update_action,v_a_new],dim=-1)
 
             actor_loss=-torch.sum(self.critic(update_Critic_state_all,update_action_all_new))/self.batch_size
-            # DDPG中的 q=c(s,a(s))来对actor做loss
+            
             actor_loss_sum+=actor_loss.cpu().item()
             self.actor_optimizer.zero_grad()
             actor_loss.backward()
@@ -281,13 +238,13 @@ class MARL(object):
                 print(f'the {step} iterations')        
                 with torch.no_grad():
                     state=torch.FloatTensor(current_state).to(self.device).unsqueeze(0)   
-                    #环境加噪声  10次 选argmax Q
+                   
                     Actor_attention=self.actor_attention(state,self.Gmat)
                     Actor_state_bar=torch.bmm(Actor_attention,state)
                     Actor_state_all=torch.concat([state,Actor_state_bar],dim=-1)
                     self.actor.eval()
                     self.critic.eval()
-                    action=self.actor(Actor_state_all)     #做出动作
+                    action=self.actor(Actor_state_all)    
                     print("origin_action:",action)
                     
                     flag=0
@@ -302,14 +259,14 @@ class MARL(object):
                     action=np.clip(action,0.1, 0.9) 
                   
                     # }
-                    print('action:',action)                      # 一维的，在env中会处理
-                    reward,next_state,avg,p95,throughput,price=self.simulator.step(action,users) #apply进环境
+                    print('action:',action)                     
+                    reward,next_state,avg,p95,throughput,price=self.simulator.step(action,users)
                     print_info = f'--The {step} iteration, change flag:{flag}, concurrrency: {benchmark}-{users}, action: {action}, price: {price}$, avg_e2e_latency: {avg} s, throughput: {throughput},  reward:{reward}'
                     print(print_info)
                     logger.info(print_info)
 
                 next_state=self.scale_state(np.array([next_state])).reshape(self.function_number,self.s_dim)
-                # self.buffer_s[self.buffer_pointer]=current_state    #reshape+scale过
+                # self.buffer_s[self.buffer_pointer]=current_state    
                 # self.buffer_s1[self.buffer_pointer]=next_state     
                 # self.buffer_a[self.buffer_pointer]=action.reshape(self.function_number,self.a_dim)
                 # self.buffer_r[self.buffer_pointer]=np.array(reward).reshape(self.function_number,1)
@@ -352,24 +309,11 @@ class MARL(object):
 
 if __name__ == '__main__':
     mf=MARL()
-    mf.load_models('mf_branch20-train50')
+    mf.load_models('mf')
     users=20
     benchmark='branch'
     mf.serving(users, benchmark)
-    # train_platform.test_simulation()
-    # train_platform.test_network()
-    # gatmf.load_models('gatmf_p1')
-    # for i in range(50):
-
-    # mf.save_models('mf_sequence15-train50')
-        # if i%100==0:
-        #     print(f'train {i} iter')
-        # if i==500:
-        #     gatmf.save_models('gatmf_ablation_p1_500')
-        # if i==1000:
-            # gatmf.save_models('gatmf_ablation_p1_1000')        
-    # train_platform.load_models(2000)
-    # train_platform.update(1)
+  
 
 
 #经历了奖励的修改和batchnormal之后，动作到了0.5附近了
