@@ -19,7 +19,6 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(handler)
 
 
-###需要改的地方很多，模型文件位置，state文件位置，function number  以及model中 critic的维度
 lr_a=0.001
 lr_c=0.003
 batch_size=64
@@ -43,16 +42,14 @@ class MADDPG(object):
         # self.function_number=12
         # self.a_dmin=3
         # self.s_dim=6
-        # self.buffer_a=np.loadtxt('/home/user/code/faas-resource/GAT-MF/model/ml/maddpg/dataset/action_buffer_v2.csv',delimiter=",", dtype=np.float32)
-        # self.buffer_r=np.loadtxt('/home/user/code/faas-resource/GAT-MF/model/ml/maddpg/dataset/reward_buffer_maddpg_v2.csv',delimiter=",", dtype=np.float32)
+        # self.buffer_a=np.loadtxt('/home/user/code/faas-resource/model/ml/maddpg/dataset/action_buffer_v2.csv',delimiter=",", dtype=np.float32)
+        # self.buffer_r=np.loadtxt('/home/user/code/faas-resource/model/ml/maddpg/dataset/reward_buffer_maddpg_v2.csv',delimiter=",", dtype=np.float32)
        
         self.buffer_s_origin=np.loadtxt(f'/home/user/code/faas-resource/online_step/{benchmark}/state.csv',delimiter=",", dtype=np.float32)
         scaled_buffer_state=self.scale_state(self.buffer_s_origin)
         self.buffer_s=scaled_buffer_state
 
-        # self.buffer_s1_origin=np.loadtxt('/home/user/code/faas-resource/GAT-MF/model/ml/maddpg/dataset/state_next_buffer_v2.csv',delimiter=",", dtype=np.float32)
-        # scaled_buffer_state_next=self.scale_state(self.buffer_s1_origin)
-        # self.buffer_s1=scaled_buffer_state_next
+       
 
         self.simulator=Environment(self.function_number)
 
@@ -75,12 +72,6 @@ class MADDPG(object):
         critics_tar = [None for _ in range(self.function_number)]
         optimizers_c = [None for _ in range(self.function_number)]
         optimizers_a = [None for _ in range(self.function_number)]
-        # input_size_global = sum(obs_shape_n) + sum(action_shape_n)
-
-        # if arglist.restore == True: # restore the model
-        #     for idx in arglist.restore_idxs:
-        #         trainers_cur[idx] = torch.load(arglist.old_model_name+'c_{}'.format(agent_idx))
-        #         trainers_tar[idx] = torch.load(arglist.old_model_name+'t_{}'.format(agent_idx))
 
         # Note: if you need load old model, there should be a procedure for juding if the trainers[idx] is None
         for i in range(self.function_number):
@@ -118,7 +109,7 @@ class MADDPG(object):
         head_o, head_a, end_o, end_a = 0, 0, 0, 0
         obs_shape_n= [10]*self.function_number
         action_shape_n= [4]*self.function_number
-        # 数组的界限
+       
         for obs_shape, action_shape in zip(obs_shape_n, action_shape_n):
             end_o = end_o + obs_shape
             end_a = end_a + action_shape
@@ -136,28 +127,22 @@ class MADDPG(object):
             
             for agent_idx, (actor_c, actor_t, critic_c, critic_t, opt_a, opt_c) in \
                         enumerate(zip(actors_cur, actors_tar, critics_cur, critics_tar, optimizers_a, optimizers_c)):
-                    # 3个agent对应3组网络，zip合并，enumerate打包迭代返回。一共三组（ac,at,cc,ct,oa,oc）
+                   
                 batch_index=np.random.randint(self.n,size=batch_size)
                 batch_s=torch.FloatTensor(self.buffer_s[batch_index]).to(self.device)
                 batch_a=torch.FloatTensor(self.buffer_a[batch_index]).to(self.device)
                 batch_s_next=torch.FloatTensor(self.buffer_s1[batch_index]).to(self.device)   #s'
                 batch_r=torch.FloatTensor(self.buffer_r[batch_index]).to(self.device)
 
-                # _obs_n_o, _action_n, _rew_n, _obs_n_n  = memory.sample(batch_size, agent_idx) # Note_The func is not the same as others
-                # 这里sample出来的size是  [batchsize,n*s_dmin]
-                # 全体
-                # batch_r = torch.tensor(_rew_n, device=self.device, dtype=torch.float) # set the rew to gpu
-                # batch_a = torch.from_numpy(_action_n).to(self.device, torch.float)
-                # batch_s = torch.from_numpy(_obs_n_o).to(self.device, torch.float)
-                # batch_s_next = torch.from_numpy(_obs_n_n ).to(self.device, torch.float)
+              
                 action_tar = torch.cat([a_t(batch_s_next[:, obs_size[idx][0]:obs_size[idx][1]]).detach() \
                                             for idx, a_t in enumerate(actors_tar)], dim=1)
-                    # 所有的target a  每个agent都要做动作
+                   
                 q = critic_c(batch_s, batch_a).reshape(-1)       # q(batch_s,batch_a)
                 # q(s,a)
-                    # 所有的s和所有a   reshape(-1)拉成一行
+                  
                 q_ = critic_t(batch_s_next, action_tar).reshape(-1)      # q_(batch_s',batch_a')
-                    # 所有的s'和所有a_target
+                    # all s' and all a_target
                 tar_value = q_*gamma + batch_r       # q_*gamma*done + reward
 
                 loss_c = torch.nn.MSELoss()(q, tar_value) # bellman equation
@@ -166,13 +151,13 @@ class MADDPG(object):
                 loss_c.backward()
                 nn.utils.clip_grad_norm_(critic_c.parameters(),max_grad_norm)
                 opt_c.step()
-                    # 全局critic更新：所有东西都是全局，
-            #============================这里更新了每一个critic==========================
+                    # all global
+            #============================update every critic==========================
                 action_i_new = actor_c(batch_s[:, obs_size[agent_idx][0]:obs_size[agent_idx][1]])   #a=actor(batch_s)  
                 
-                    # 自己的obs，自己的action
+                    # self obs，self action
                 batch_a[:, action_size[agent_idx][0]:action_size[agent_idx][1]] = action_i_new   
-                #这里batch_a是采样出来的，agent i做了动作后，放回batch_a
+               
                 loss_a = torch.mul(-1, torch.mean(critic_c(batch_s, batch_a)))    
                 loss_actor.append(loss_a.cpu().item())  
                 opt_a.zero_grad()
@@ -245,10 +230,9 @@ class MADDPG(object):
                 print('instance price:',instance_price)
 
     def pretrain(self,load_iter):
-    #初始化网络
         actors_cur, critics_cur, actors_tar, critics_tar, optimizers_a, optimizers_c=self.init_trainers()
         self.load_model(actors_cur, actors_tar, critics_cur, critics_tar,load_iter)
-    #训练
+
         actors_cur, actors_tar, critics_cur, critics_tar=self.agents_train(actors_cur, actors_tar, critics_cur, critics_tar, optimizers_a, optimizers_c,iter)
         self.save_model(actors_cur, actors_tar, critics_cur, critics_tar,3000)
 
