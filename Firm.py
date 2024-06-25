@@ -29,7 +29,7 @@ MEMORY_CAPACITY = 1500
 BATCH_SIZE = 32
 benchmark='search'
 users=20
-directory=f"/home/user/code/faas-resource/GAT-MF/firm/{benchmark}/"
+directory=f"/home/user/code/faas-resource/firm/{benchmark}/"
 
 
 
@@ -132,13 +132,6 @@ class DDPG(object):
 
 
     def learn(self,round):
-        # for x in self.Actor_target.state_dict().keys():
-        #     eval('self.Actor_target.' + x + '.data.mul_((1-TAU))')
-        #     eval('self.Actor_target.' + x + '.data.add_(TAU*self.Actor_eval.' + x + '.data)')
-        #
-        # for x in self.Critic_target.state_dict().keys():
-        #     eval('self.Critic_target.' + x + '.data.mul_((1-TAU))')
-        #     eval('self.Critic_target.' + x + '.data.add_(TAU*self.Critic_eval.' + x + '.data)')
      
         for iter in range(round):
             if iter%200==0:
@@ -173,12 +166,12 @@ class DDPG(object):
             loss_a.backward()
             self.atrain.step()
 
-            a_ = self.Actor_target(bs_)  # 这个网络不及时更新参数, 用于预测 Critic 的 Q_target 中的 action
-            q_ = self.Critic_target(bs_, a_)  # 这个网络不及时更新参数, 用于给出 Actor 更新参数时的 Gradient ascent 强度
+            a_ = self.Actor_target(bs_)  
+            q_ = self.Critic_target(bs_, a_) 
             q_target = br + GAMMA * q_  # q_target = 负的
             q_v = self.Critic_eval(bs, ba)
             td_error = self.loss_td(q_target, q_v)
-            # td_error=R + GAMMA * ct（bs_,at(bs_)）-ce(s,ba) 更新ce ,但这个ae(s)是记忆中的ba，让ce得出的Q靠近Q_target,让评价更准确
+           
             # print('critic td_error=',td_error)
             self.ctrain.zero_grad()
             td_error.backward()
@@ -190,11 +183,11 @@ class DDPG(object):
         current_state=self.scale_state(current_state.reshape(self.function_number,self.s_dim))
    
         for j in range(15):
-            action=[]      #每轮开始置空
-            for x in range(self.function_number):        # 智能体共享网络
+            action=[]     
+            for x in range(self.function_number):       
                 state=current_state[x]          
-                state=torch.FloatTensor(state).to(self.device)      #unsqueeze加1个维度
-                self.Actor_eval.eval()  # when BN or Dropout in testing ################
+                state=torch.FloatTensor(state).to(self.device)     
+                self.Actor_eval.eval()  # when BN or Dropout in testing 
                 a = self.Actor_eval(state.unsqueeze(0))
                 # action = np.clip(np.random.normal(a, 0.1), 0.1, 0.9)
                 action.append(a.detach()[0])
@@ -203,7 +196,7 @@ class DDPG(object):
             print("origin_action=",action_bar)
             a = np.clip(np.random.normal(action_bar, 0.05), 0.2, 0.8)
             print("action=",a)
-            reward,next_state,avg,p95,throughput,price=self.simulator.step(a,users,benchmark,False) #apply进环境
+            reward,next_state,avg,p95,throughput,price=self.simulator.step(a,users,benchmark,False)
             
             print_info = f'--The {j} iteration,{benchmark}-{users} price: {price}$,concurrency: {users}action: {a},  avg_e2e_latency: {avg} s,p95:{p95} throughput: {throughput},reward:{reward}'
             current_state=next_state
@@ -214,9 +207,7 @@ class DDPG(object):
             print(current_state)
             logger.info(print_info)
 
-    def changewk(self):
-        trace=np.array([50.0, 50.0, 50.0, 55.0, 55.0, 55.0, 47.0, 47.0, 47.0, 49.0, 49.0, 49.0, 57.0, 57.0, 57.0, 39.0, 39.0, 39.0, 24.0, 24.0, 24.0, 26.0, 26.0, 26.0, 55.0, 55.0, 55.0, 33.0, 33.0, 33.0, 41.0, 41.0, 41.0, 87.0, 87.0, 87.0, 55.0, 55.0, 55.0, 50.0, 50.0, 50.0, 52.0, 52.0, 52.0, 55.0, 55.0, 55.0, 65.0, 65.0, 65.0, 54.0, 54.0, 54.0, 56.0, 56.0, 56.0, 54.0, 54.0, 54.0, 51.0, 51.0, 51.0, 56.0, 56.0, 56.0, 47.0, 47.0, 47.0, 51.0, 51.0, 51.0, 61.0, 61.0, 61.0, 59.0, 59.0, 59.0, 55.0, 55.0, 55.0, 55.0, 55.0, 55.0, 51.0, 51.0, 51.0])
-        test_trace=trace/2
+    def changewk(self,test_trace):
         current_state=np.array([0.4,0.825621662,0.623262245,23.84,252.34,0.4,29845.24,5.56959,13.53646,25,0.883504416,0.882439015,0.4,31.41,80,0.6,51739.39,1.17778,1.97851,25,0.4,0.4,0.4,36.59,404.84,4.11,17563.2,11.67873,17.66522,25,0.4,0.4,0.4,23.93,248.45,0.98,13672.75,1.47443,3.27221,25,0.700099189,0.4,0.76061169,33.21,178.49,0.96,7307.37,3.02348,4.37693,25,0.4,0.4,0.4,42.21,488.15,5.99,34812.97,8.52047,19.31171,25])
         current_state=self.scale_state(current_state.reshape(self.function_number,self.s_dim))
         tracelen=87
@@ -227,10 +218,10 @@ class DDPG(object):
             print(f'the {step} iterations, the workload is {users},next_workload is {next_wk}')
             
        
-            action=[]      #每轮开始置空
-            for x in range(self.function_number):        # 智能体共享网络
+            action=[]     
+            for x in range(self.function_number):        # share networks among agents
                 state=current_state[x]          
-                state=torch.FloatTensor(state).to(self.device)      #unsqueeze加1个维度
+                state=torch.FloatTensor(state).to(self.device)      
                 self.Actor_eval.eval()  # when BN or Dropout in testing ################
                 a = self.Actor_eval(state.unsqueeze(0))
                 # action = np.clip(np.random.normal(a, 0.1), 0.1, 0.9)
