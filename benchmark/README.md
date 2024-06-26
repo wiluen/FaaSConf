@@ -16,6 +16,7 @@ These workflows perform various tasks, including pre-processing of input images 
 
 you can build the image and upload to your Docker hub then deploy it
 > faas-cli build -f functiin.yml
+
 > faas-cli deploy -f functiin.yml
 
 
