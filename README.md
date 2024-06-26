@@ -21,5 +21,4 @@ Benchmarks are located in benchmark directory. We use Locust as the workload gen
 - Aquatope.py,RAMBO.py,firm.py to reproduce state-of-the-arts
 - updateOenpfaasYaml.sh and yaml diretory: interact with local serverless enviroments
 
-### How to run
 
