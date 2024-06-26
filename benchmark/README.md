@@ -15,9 +15,9 @@ These workflows perform various tasks, including pre-processing of input images 
 -  mobilenet
 
 you can build the image and upload to your Docker hub then deploy it
-> faas-cli build -f functiin.yml
+> faas-cli build -f function.yml
 
-> faas-cli deploy -f functiin.yml
+> faas-cli deploy -f function.yml
 
 
 the benchmark is modifed from paper [Enhancing Performance Modeling of Serverless Functions via Static Analysis（ICSOC22）](https://springer.longhoe.net/chapter/10.1007/978-3-031-20984-0_5#google_vignette)
