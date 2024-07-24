@@ -61,13 +61,7 @@ class MARL(object):
                 update_fre=3,
                 function_number=12):
         super().__init__()
-        '''
-        code from: https://github.com/tsinghua-fib-lab/Large-Scale-MARL-GATMF/blob/main/code/grid_train.py
-        '''
         
-        print('Initializing...')
-
-        # generate config
         config_data=locals()
         del config_data['self']
         del config_data['__class__']
@@ -86,7 +80,7 @@ class MARL(object):
         self.diamond_extent=diamond_extent
         self.num_move=num_move
 
-
+#workflow topology
         Gmat_tckt=[[0,1,0,1,0,0,1,0,1,0,1,1],
               [1,0,0,0,1,1,0,1,0,1,0,0],
               [0,0,0,0,0,0,0,0,0,0,0,1],
@@ -219,22 +213,22 @@ class MARL(object):
             
       
             with torch.no_grad():
+                # attention module for actor and critic
                 # use s',a’->Q target
                 update_Actor_attention1=self.actor_attention_target(s1_batch,self.Gmat) 
                 update_Actor_state1_bar=torch.bmm(update_Actor_attention1,s1_batch)   #att score*s=actor's               
                 update_Actor_state1_all=torch.concat([s1_batch,update_Actor_state1_bar],dim=-1)  
                 update_action1=self.actor_target(update_Actor_state1_all)   
-                # DDPG a'=a_t(s')
-                # ===========================================================
+                
                 update_Critic_attention1=self.critic_attention_target(s1_batch,self.Gmat) 
                 update_Critic_state1_bar=torch.bmm(update_Critic_attention1,s1_batch)  
-                # critic'state
+                
                 update_Critic_state1_all=torch.concat([s1_batch,update_Critic_state1_bar],dim=-1)   
                 update_action1_bar=torch.bmm(update_Critic_attention1,update_action1) 
-                # critic'action
+                
                 update_action1_all=torch.concat([update_action1,update_action1_bar],dim=-1)  
                 Q1=self.critic_target(update_Critic_state1_all,update_action1_all)  #Q(S,A)=Q(sj,sj~,aj,aj~)
-                # DDPG q'=c_t(s',a')
+                #  q'=c_t(s',a')
                 y=r_batch+self.gamma*Q1
 
             # a and s->Q
