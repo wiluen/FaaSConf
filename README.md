@@ -23,6 +23,7 @@ Benchmarks are located in benchmark directory. We use Locust as the workload gen
 
 ### Acknowledgments
 We would like to express our special thanks to the open-source benchmarks, traces and codes of these papers:
+
 [GAT-MF: Graph Attention Mean Field for Very Large Scale Multi-Agent Reinforcement Learning](https://dl.acm.org/doi/abs/10.1145/3580305.3599359)
 
 [Enhancing performance modeling of serverless functions via static analysis](https://link.springer.com/chapter/10.1007/978-3-031-20984-0_5)
