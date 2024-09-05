@@ -22,8 +22,9 @@ Benchmarks are located in benchmark directory. We use Locust as the workload gen
 - updateOenpfaasYaml.sh and yaml diretory: interact with local serverless enviroments
 
 ### Acknowledgments
-We would like to express our special thanks to the open-source benchmarks, traces and codes of these papers:
+We would like to express our special thanks to the open-source benchmarks, traces and codes of these papers or repositories:
 
 - [GAT-MF: Graph Attention Mean Field for Very Large Scale Multi-Agent Reinforcement Learning](https://dl.acm.org/doi/abs/10.1145/3580305.3599359)
 - [Enhancing performance modeling of serverless functions via static analysis](https://link.springer.com/chapter/10.1007/978-3-031-20984-0_5)
 - [Serverless in the wild: Characterizing and optimizing the serverless workload at a large cloud provider](https://www.usenix.org/conference/atc20/presentation/shahrad)
+- [Serverlss Trainticket](https://github.com/FudanSELab/serverless-trainticket)
