@@ -451,35 +451,7 @@ def test(x,users,benchmark,tunecon):
     # price=get_price(resource_config)
     return lst,avg,p95,throughput,price
 
-#if __name__== '__main__':
- #   locustfile="/home/user/code/faas-resource/ml.py"
-  #  url="http://33.33.33.132:31112/function/wf1"
-    # # # search -u 20  -r 10 
-   # users=30
-   # spawn_rate =10
-   # run_time=30
-   # csv_file="/home/user/code/faas-resource/result1"
-   # run_locust(locustfile,url,users,spawn_rate,run_time,csv_file)
-    # print('hi')
-   # function_list=['starter','rgb','resize','update','resnet','mobilenet']
-    #rm_functon(function_list)
-    #x = [0.3]*18
-    # x=[0.3,0.3,0.4,0.3,0.3,0.8,0.7,0.3,0.5,0.3,0.3,0.6,0.23,0.3,0.45,0.3,0.3,0.5,0.3,0.3,0.5,0.3,0.3,0.5,0.3,0.3,0.5,0.6,0.3,0.5,0.8,0.35,0.3,0.3,0.5,0.6]
-   # resource_config=form_x_to_resource_conf_wo_cl(x)
-   # update_deploy(function_list,resource_config)
-    # construct_memory_pool()
-# # os.system("bash /home/user/code/faas-resource/yaml/get_executiontime.sh load" )
-#     # x=[0.3,0.3,0.4,0.3,0.3,0.8,0.7,0.3,0.5,0.3,0.3,0.6,0.23,0.3,0.45,0.3,0.3,0.5,0.3,0.3,0.5,0.3,0.3,0.5,0.3,0.3,0.5,0.6,0.3,0.5,0.8,0.35,0.3,0.3,0.5,0.6]
-#     # resource_config=form_x_to_resource_conf(x)
-#     # get_metric(resource_config)
-#     for j in range(1000):
-#         print(f"========第{j}轮=========")
-#         x = []
-#         for i in range(36): 
-#             num = random.random() # 生成0到1之间的随机浮点数
-#             x.append(num)
-#         print(x)
-#         test(x)
+
 
 
     
