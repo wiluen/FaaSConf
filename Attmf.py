@@ -143,8 +143,6 @@ class MARL(object):
         self.buffer_s1=np.empty((self.buffer_capacity,self.function_number,self.s_dim),dtype=np.float32) # S,C,D,Sdiff,Cdiff,Ddiff
         self.buffer_r=np.empty((self.buffer_capacity,self.function_number,1),dtype=np.float32) 
 
-        # buffer_a=np.loadtxt('/home/user/code/faas-resource/GAT-MF/experience/image1/v2/action_buffer_v2.csv',delimiter=",", dtype=np.float32).reshape(n,self.function_number,self.a_dim)
-        # buffer_r=np.loadtxt('/home/user/code/faas-resource/GAT-MF/experience/image1/v2/reward_buffer_maddpg_v2_gatmf.csv',delimiter=",", dtype=np.float32).reshape(n,self.function_number,1)
         wk=20
         benchmark='search'
         self.output_dir=f'/home/user/code/faas-resource/online_step/{benchmark}/all/'
