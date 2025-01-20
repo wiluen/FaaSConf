@@ -28,3 +28,12 @@ We would like to express our special thanks to the open-source benchmarks, trace
 - [Enhancing performance modeling of serverless functions via static analysis](https://link.springer.com/chapter/10.1007/978-3-031-20984-0_5)
 - [Serverless in the wild: Characterizing and optimizing the serverless workload at a large cloud provider](https://www.usenix.org/conference/atc20/presentation/shahrad)
 - [Serverlss Trainticket](https://github.com/FudanSELab/serverless-trainticket)
+
+### Citation
+`@inproceedings{wang2024faasconf,
+  title={FaaSConf: QoS-aware Hybrid Resources Configuration for Serverless Workflows},
+  author={Wang, Yilun and Chen, Pengfei and Dou, Hui and Zhang, Yiwen and Yu, Guangba and He, Zilong and Huang, Haiyu},
+  booktitle={Proceedings of the 39th IEEE/ACM International Conference on Automated Software Engineering},
+  pages={957--969},
+  year={2024}
+}`
