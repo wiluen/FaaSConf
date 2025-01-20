@@ -30,6 +30,7 @@ We would like to express our special thanks to the open-source benchmarks, trace
 - [Serverlss Trainticket](https://github.com/FudanSELab/serverless-trainticket)
 
 ### Citation
+```
 @inproceedings{wang2024faasconf,
   title={FaaSConf: QoS-aware Hybrid Resources Configuration for Serverless Workflows},
   author={Wang, Yilun and Chen, Pengfei and Dou, Hui and Zhang, Yiwen and Yu, Guangba and He, Zilong and Huang, Haiyu},
@@ -37,3 +38,4 @@ We would like to express our special thanks to the open-source benchmarks, trace
   pages={957--969},
   year={2024}
 }
+```
