@@ -17,11 +17,13 @@ Benchmarks are located in benchmark directory. We use Locust as the workload gen
 #### ML workflows
 
 These workflows perform various tasks, including pre-processing of input images and classification utilizing deep learning (DL) models.
-##### orchestrate serverless workflows of ML workflows, including:
+
+orchestrate serverless workflows of ML workflows, including:
 - Sequential(5 funcs)
 - Parallel(6 funcs)
 - Branch(7 funcs)
-##### single functions: ML single functions
+
+single functions: ML single functions
 - load
 - starter
 - rgb
