@@ -17,7 +17,7 @@ NUM_RESOURCES=3
 # MEM=[128, 256, 384, 512, 768, 1024, 2048]  #0-5
 # REP=[1,2,3,4,5,6,7,8]  #0-7
 
-#统一资源配置，对于trainticket适当缩小，可以理解
+#统一资源配置，对于trainticket适当缩小
 CPU_MIN=250
 CPU_MAX=2000
 MEM_MIN=256
