@@ -1,6 +1,6 @@
-A demo of our data collect on Kuberneters and OpenFaaS.
+A part of our data collect on Kuberneters and OpenFaaS.
 
-The csv file contains
+The csv file contains:
 - resource config per function
 - performance metrics per function (contianer level)
 - end-to-end performance and costs 
